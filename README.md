@@ -97,17 +97,15 @@ After fixing the bugs, you should be able to run the following sequence successf
 
 **Important**: You must use **your own email address** when testing the login flow. The success flag is generated based on the email you use.
 
-## Debugging Tips
 
-- **Server Logs**: Watch the terminal where `npm start` is running to see errors and the generated OTP.
-- **Network Tab**: Use the browser developer tools or `curl -v` to inspect request headers and response cookies.
-- **JWT Debugging**: Use [jwt.io](https://jwt.io) to decode tokens and verify their contents.
 
 
 ## Submission
 
 To submit your assignment:
-1.  Upload your fixed code to a GitHub repository or zip the project.
-2.  **Crucial**: Include the `success_flag` returned by the `/protected` endpoint in your submission comments or a text file.
-3.  **Proof of Work**: Upload a file (e.g. `output.txt` or screenshots) showing the successful output of all 4 curl calls.
-4.  (Optional) A short video showing the successful run.
+
+1.  Push your code to a **Public GitHub Repository**.
+2.  Add a file named `output.txt` in your repository.
+    *   This file must contain the terminal output of all 4 test commands (Login, Verify OTP, Get Token, Access Protected Route).
+    *   Ensure the final command's output showing the `success_flag` is clearly visible in this file.
+3.  Share the link to your repository.
