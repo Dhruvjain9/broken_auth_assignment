@@ -1,0 +1,55 @@
+TASK 1: Output
+
+$ curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"dhruvcgs@gmail.com","password":"password123"}'
+
+{
+  "message":"OTP sent",
+  "loginSessionId":"27fbbd"
+}
+
+POST /auth/login
+[OTP] Session 27fbbd generated OTP: 488468
+POST /auth/login -> 200 (2ms)
+
+TASK 2: Output
+
+$ curl -c cookies.txt -X POST http://localhost:3000/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{"loginSessionId":"27fbbd","otp":"488468"}'
+
+{
+  "message":"OTP verified",
+  "sessionId":"27fbbd"
+}
+
+POST /auth/verify-otp
+POST /auth/verify-otp -> 200 (1ms)  
+
+TASK 3: Output
+
+$ curl -b cookies.txt -X POST http://localhost:3000/auth/token
+
+{
+  "access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImRocnV2Y2dzQGdtYWlsLmNvbSIsInNlc3Npb25JZCI6IjI3ZmJiZCIsImlhdCI6MTc3MDg5OTY5NSwiZXhwIjoxNzcwOTAwNTk1fQ.stS4mdOYJNpLwV24Hpm2lM-ZdJzaWBr3um6-nNs_SYA",
+  "expires_in":900
+}
+
+POST /auth/token
+POST /auth/token -> 200 (1ms)
+
+TASK 4: Output
+
+$ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImRocnV2Y2dzQGdtYWlsLmNvbSIsInNlc3Npb25JZCI6IjI3ZmJiZCIsImlhdCI6MTc3MDg5OTY5NSwiZXhwIjoxNzcwOTAwNTk1fQ.stS4mdOYJNpLwV24Hpm2lM-ZdJzaWBr3um6-nNs_SYA" http://localhost:3000/protected
+
+{
+  "message":"Access granted",
+  "user":{"email":"dhruvcgs@gmail.com",
+  "sessionId":"27fbbd","iat":1770899695,
+  "exp":1770900595},
+  "success_flag":"FLAG-ZGhydXZjZ3NAZ21haWwuY29tX0NPTVBMRVRFRF9BU1NJR05NRU5U"
+}
+
+GET /protected
+GET /protected -> 200 (2ms)

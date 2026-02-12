@@ -3,10 +3,11 @@ const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const requestLogger = require("./middleware/logger");
 const authMiddleware = require("./middleware/auth");
-const { generateToken } = require("./utils/tokenGenerator");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const OTP_SESSION_TTL_MS = 2 * 60 * 1000;
+const AUTH_SESSION_TTL_MS = 15 * 60 * 1000;
 
 // Session storage (in-memory)
 const loginSessions = {};
@@ -15,6 +16,7 @@ const otpStore = {};
 // Middleware
 app.use(requestLogger);
 app.use(express.json());
+app.use(cookieParser());
 
 
 app.get("/", (req, res) => {
@@ -43,13 +45,13 @@ app.post("/auth/login", (req, res) => {
       email,
       password,
       createdAt: Date.now(),
-      expiresAt: Date.now() + 2 * 60 * 1000, // 2 minutes
+      expiresAt: Date.now() + OTP_SESSION_TTL_MS, // 2 minutes
     };
 
     // Store OTP
     otpStore[loginSessionId] = otp;
 
-    console.log(`[OTP] Session ${loginSessionId} generated`);
+    console.log(`[OTP] Session ${loginSessionId} generated OTP: ${otp}`);
 
     return res.status(200).json({
       message: "OTP sent",
@@ -83,14 +85,20 @@ app.post("/auth/verify-otp", (req, res) => {
       return res.status(401).json({ error: "Session expired" });
     }
 
-    if (parseInt(otp) !== otpStore[loginSessionId]) {
+    if (!/^\d{6}$/.test(String(otp))) {
+      return res.status(400).json({ error: "OTP must be a 6-digit number" });
+    }
+
+    if (String(otp) !== String(otpStore[loginSessionId])) {
       return res.status(401).json({ error: "Invalid OTP" });
     }
+
+    session.expiresAt = Date.now() + AUTH_SESSION_TTL_MS;
 
     res.cookie("session_token", loginSessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: AUTH_SESSION_TTL_MS, // 15 minutes
     });
 
     delete otpStore[loginSessionId];
@@ -109,18 +117,22 @@ app.post("/auth/verify-otp", (req, res) => {
 
 app.post("/auth/token", (req, res) => {
   try {
-    const token = req.headers.authorization;
+    const sessionToken = req.cookies.session_token;
 
-    if (!token) {
+    if (!sessionToken) {
       return res
         .status(401)
         .json({ error: "Unauthorized - valid session required" });
     }
 
-    const session = loginSessions[token.replace("Bearer ", "")];
+    const session = loginSessions[sessionToken];
 
     if (!session) {
       return res.status(401).json({ error: "Invalid session" });
+    }
+
+    if (Date.now() > session.expiresAt) {
+      return res.status(401).json({ error: "Session expired" });
     }
 
     // Generate JWT
@@ -129,7 +141,7 @@ app.post("/auth/token", (req, res) => {
     const accessToken = jwt.sign(
       {
         email: session.email,
-        sessionId: token,
+        sessionId: sessionToken,
       },
       secret,
       {
